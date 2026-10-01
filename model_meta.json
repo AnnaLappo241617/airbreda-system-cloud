@@ -1,0 +1,29 @@
+{
+  "trained_at": "2026-10-01T12:08:26+00:00",
+  "rows": 4,
+  "features": [
+    "total_intensity_veh_per_hr",
+    "hour_of_day"
+  ],
+  "target": "no2_ug_m3",
+  "coefficients": {
+    "total_intensity_veh_per_hr": 0.005294085876316508,
+    "hour_of_day": -9.169519308668654
+  },
+  "intercept": 92.6054226302998,
+  "metrics": {
+    "in_sample_all_rows": {
+      "n": 4,
+      "r2": 0.9854,
+      "mae": 0.908
+    }
+  },
+  "baseline_mae": 7.905,
+  "threshold_ug_m3": 40.0,
+  "sklearn_version": "1.8.0",
+  "logistic_trained": false,
+  "data_range": [
+    "2026-10-01 07:00:00+00:00",
+    "2026-10-01 10:00:00+00:00"
+  ]
+}

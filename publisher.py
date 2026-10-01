@@ -1,5 +1,8 @@
 """Publish readings to the shared Redis list 'readings' (Day 2 message broker).
 
+Day 3: publishing is OFF unless QUEUE_ENABLED=1 (the VM deployment has no Redis;
+ingestion writes straight to the database and bucket - see ADR-004).
+
 The broker is an ADDITION to the storage writes, not a replacement: if Redis is down,
 the failure is logged and the script carries on. The database and S3 still receive the
 data, so no reading is lost - only the queue misses it (see ADR-002).
@@ -34,9 +37,15 @@ def clean(value):
     return value
 
 
+def queue_enabled():
+    return os.environ.get("QUEUE_ENABLED") == "1"
+
+
 def publish(messages, source, client=None):
     if not messages:
         return 0
+    if client is None and not queue_enabled():
+        return 0  # Day 3 default: no broker, nothing to do
     try:
         client = client or get_client()
         payloads = [json.dumps({k: clean(v) for k, v in m.items()}) for m in messages]

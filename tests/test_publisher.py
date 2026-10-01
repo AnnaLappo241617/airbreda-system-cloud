@@ -39,3 +39,10 @@ def test_broker_down_is_not_fatal():
     msgs = [{"station_id": "NL10240", "timestamp": "2024-01-15T08:00:00Z",
              "component": "NO2", "value": 18.4}]
     assert publisher.publish(msgs, "Luchtmeetnet", client=FakeRedis(fail=True)) == 0
+
+
+def test_queue_is_off_by_default(monkeypatch):
+    monkeypatch.delenv("QUEUE_ENABLED", raising=False)
+    msgs = [{"station_id": "NL10240", "timestamp": "2024-01-15T08:00:00Z",
+             "component": "NO2", "value": 18.4}]
+    assert publisher.publish(msgs, "Luchtmeetnet") == 0   # no Redis contacted at all

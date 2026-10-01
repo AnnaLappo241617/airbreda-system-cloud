@@ -1,0 +1,12 @@
+# Dashboard image only (keeps the ingestion images small on the 1 GB VM).
+# scikit-learn is PINNED: model.pkl must be loaded with the same version that trained it.
+# Install exactly this version in your laptop venv before training (see train_model.py).
+scikit-learn==1.8.0
+joblib
+numpy
+pandas
+fastapi
+uvicorn
+boto3
+psycopg2-binary
+python-dotenv

@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 800" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#333"/></marker>
+    <marker id="p" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7a4cb8"/></marker>
+    <marker id="g" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#888"/></marker>
+  </defs>
+  <rect width="1240" height="800" fill="#fff"/>
+  <text x="620" y="32" text-anchor="middle" font-size="20" font-weight="600">AirBreda — Architecture Checkpoint 4 (full system, Day 4)</text>
+
+  <!-- Internet sources -->
+  <text x="110" y="70" text-anchor="middle" font-size="12" fill="#666">INTERNET</text>
+  <rect x="15" y="90" width="190" height="70" rx="10" fill="#e8f1fb" stroke="#3b78c2"/>
+  <text x="110" y="120" text-anchor="middle" font-size="14" font-weight="600">Luchtmeetnet API</text>
+  <text x="110" y="140" text-anchor="middle" font-size="11">HTTPS · NL10240 NO₂</text>
+  <rect x="15" y="190" width="190" height="70" rx="10" fill="#e8f1fb" stroke="#3b78c2"/>
+  <text x="110" y="220" text-anchor="middle" font-size="14" font-weight="600">NDW open data</text>
+  <text x="110" y="240" text-anchor="middle" font-size="11">HTTP · 2 gzipped XML feeds</text>
+
+  <rect x="15" y="470" width="190" height="90" rx="10" fill="#f4f4f4" stroke="#777"/>
+  <text x="110" y="498" text-anchor="middle" font-size="14" font-weight="600">Developer laptop</text>
+  <text x="110" y="518" text-anchor="middle" font-size="11">builds training data, trains</text>
+  <text x="110" y="534" text-anchor="middle" font-size="11">model.pkl · scp + SSH deploy</text>
+  <text x="110" y="550" text-anchor="middle" font-size="11" fill="#555">browser → :8000 dashboard</text>
+
+  <!-- AWS region / VPC -->
+  <rect x="250" y="55" width="975" height="610" rx="12" fill="#fff8ee" stroke="#e58e00" stroke-dasharray="6 4"/>
+  <text x="266" y="76" font-size="12" fill="#b36b00">AWS · eu-north-1 (Stockholm) · default VPC</text>
+
+  <!-- EC2 -->
+  <rect x="280" y="95" width="470" height="385" rx="12" fill="#eef7ee" stroke="#3c9a3c"/>
+  <text x="300" y="120" font-size="15" font-weight="600">EC2 airbreda-vm · t3.micro · Amazon Linux 2023</text>
+  <text x="300" y="138" font-size="11" fill="#555">sg launch-wizard-1 · inbound 22 + 8000 from my IP only · 8 GB gp3 + 2 GB swap</text>
+
+  <rect x="300" y="152" width="430" height="44" rx="6" fill="#fff" stroke="#999"/>
+  <text x="515" y="171" text-anchor="middle" font-size="12" font-weight="600">cron (cronie) — Docker Engine</text>
+  <text x="515" y="188" text-anchor="middle" font-size="11">:10 → airbreda-air   ·   :20 → airbreda-traffic   (docker run --rm, run once, exit)</text>
+
+  <rect x="300" y="208" width="430" height="58" rx="8" fill="#fff" stroke="#3c9a3c"/>
+  <text x="315" y="230" font-size="13" font-weight="600">airbreda-air</text>
+  <text x="315" y="250" font-size="11">fetch NO₂ → stale/null check → write row (+is_flagged) · no queue</text>
+  <rect x="300" y="274" width="430" height="58" rx="8" fill="#fff" stroke="#3c9a3c"/>
+  <text x="315" y="296" font-size="13" font-weight="600">airbreda-traffic</text>
+  <text x="315" y="316" font-size="11">fetch NDW → speed −1 check → CSV + raw to S3 → FLOW/SPEED to DB</text>
+
+  <rect x="300" y="342" width="430" height="44" rx="6" fill="#eef4fb" stroke="#2c6fbb"/>
+  <text x="515" y="361" text-anchor="middle" font-size="12" font-weight="600">Structured JSON logs → ~/airbreda/logs/air.log, traffic.log</text>
+  <text x="515" y="377" text-anchor="middle" font-size="11">(cron redirects stdout; --rm would otherwise delete them)</text>
+
+  <rect x="300" y="394" width="430" height="70" rx="8" fill="#fff" stroke="#3c9a3c" stroke-width="2"/>
+  <text x="315" y="414" font-size="13" font-weight="600">dashboard · FastAPI · --restart unless-stopped</text>
+  <text x="315" y="432" font-size="11">GET / · /site/{id} · /health → predict.py + model.pkl baked into the image</text>
+  <text x="315" y="449" font-size="11">reads NO₂ (RDS) + intensity (S3 GetObject) · logs mounted :ro</text>
+
+  <!-- IAM role -->
+  <rect x="800" y="95" width="400" height="80" rx="10" fill="#fff3d9" stroke="#d4a017"/>
+  <text x="1000" y="120" text-anchor="middle" font-size="14" font-weight="600">IAM role airbreda-ec2-role (narrowed)</text>
+  <text x="1000" y="140" text-anchor="middle" font-size="11">policy airbreda-s3-bucket-rw: s3:PutObject + s3:GetObject</text>
+  <text x="1000" y="157" text-anchor="middle" font-size="11">on arn:aws:s3:::airbreda-testnight-2026/* only · ListBucket denied</text>
+
+  <!-- RDS -->
+  <rect x="800" y="225" width="400" height="110" rx="10" fill="#f3ecfa" stroke="#7a4cb8"/>
+  <text x="1000" y="250" text-anchor="middle" font-size="14" font-weight="600">RDS PostgreSQL database-lab-12</text>
+  <text x="1000" y="270" text-anchor="middle" font-size="11">sensor_readings · security group "default"</text>
+  <text x="1000" y="288" text-anchor="middle" font-size="11">inbound 5432 from sg launch-wizard-1 (the VM)</text>
+  <text x="1000" y="304" text-anchor="middle" font-size="11">inbound 5432 from my IP (laptop) · publicly accessible</text>
+  <text x="1000" y="322" text-anchor="middle" font-size="11" fill="#555">credentials: DB_* in ~/airbreda/.env on the VM</text>
+
+  <!-- S3 -->
+  <rect x="800" y="385" width="400" height="90" rx="10" fill="#fdeeee" stroke="#c0392b"/>
+  <text x="1000" y="410" text-anchor="middle" font-size="14" font-weight="600">S3 airbreda-testnight-2026</text>
+  <text x="1000" y="430" text-anchor="middle" font-size="11">ndw/YYYY-MM-DD/HH-&lt;site&gt;.csv · ndw/raw/…xml.gz</text>
+  <text x="1000" y="448" text-anchor="middle" font-size="11">access granted by the IAM role (no bucket keys on the VM)</text>
+
+  <!-- Arrows -->
+  <line x1="205" y1="125" x2="296" y2="236" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="205" y1="225" x2="296" y2="302" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <text x="212" y="182" font-size="10" fill="#555">outbound</text>
+  <text x="212" y="194" font-size="10" fill="#555">internet</text>
+
+  <line x1="730" y1="236" x2="796" y2="262" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <line x1="730" y1="298" x2="796" y2="298" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <text x="765" y="203" text-anchor="middle" font-size="10">TCP 5432 · private</text>
+  <text x="765" y="215" text-anchor="middle" font-size="10">path inside VPC</text>
+  <line x1="730" y1="318" x2="796" y2="425" stroke="#333" stroke-width="2" marker-end="url(#a)"/>
+  <text x="742" y="392" font-size="10">HTTPS (boto3)</text>
+
+  <line x1="750" y1="140" x2="796" y2="140" stroke="#d4a017" stroke-width="2" marker-end="url(#a)"/>
+  <polyline points="1200,175 1215,175 1215,430 1204,430" fill="none" stroke="#d4a017" stroke-width="2" stroke-dasharray="5 3" marker-end="url(#a)"/>
+  <text x="1205" y="300" font-size="10" fill="#9a7400" transform="rotate(90 1205 300)">role grants S3 access</text>
+
+  <line x1="205" y1="500" x2="296" y2="430" stroke="#888" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#g)"/>
+  <text x="212" y="455" font-size="10" fill="#666">SSH 22 / scp</text>
+  <polyline points="205,545 785,545 785,328 796,328" fill="none" stroke="#888" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#g)"/>
+  <text x="500" y="562" text-anchor="middle" font-size="10" fill="#666">laptop → RDS 5432 over the internet (dev/admin only, "My IP" rule)</text>
+
+  <polyline points="730,410 780,410 780,320 796,320" fill="none" stroke="#7a4cb8" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#p)"/>
+  <line x1="730" y1="440" x2="796" y2="455" stroke="#7a4cb8" stroke-width="1.8" stroke-dasharray="4 3" marker-end="url(#p)"/>
+  <text x="760" y="478" font-size="10" fill="#7a4cb8">dashboard reads</text>
+  <line x1="205" y1="520" x2="296" y2="440" stroke="#3b78c2" stroke-width="2" marker-end="url(#a)"/>
+  <text x="236" y="512" font-size="10" fill="#3b78c2">HTTP :8000</text>
+  <!-- Footer notes -->
+  <rect x="15" y="680" width="1210" height="100" rx="10" fill="#fafafa" stroke="#ccc"/>
+  <text x="35" y="704" font-size="13" font-weight="600">Key facts</text>
+  <text x="35" y="724" font-size="12">• One region (eu-north-1), one VM, three containers: two cron jobs (run once, exit) + one long-running dashboard. No queue (ADR-004).</text>
+  <text x="35" y="742" font-size="12">• Model lifecycle: laptop joins RDS NO₂ + S3 CSVs → training_data.csv → model.pkl (scikit-learn 1.8.0) → baked into the dashboard image.</text>
+  <text x="35" y="760" font-size="12">• Secrets: DB password in .env on the VM only. AWS access from the narrowed IAM role. VM → RDS allowed by security-group reference.</text>
+</svg>

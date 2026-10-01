@@ -14,7 +14,11 @@ POLLING INTERVAL: 1 hour (POLL_INTERVAL_SECONDS=3600) - justification
   not an hourly average - while NO2 IS an hourly average. Fixing this needs aggregation
   of minute data, not faster polling of the snapshot.
 
-RUN_ONCE=1 runs a single time and exits (useful for testing).
+RUN MODES
+- default: run ONCE and exit - Day 3, where cron starts a fresh container every hour.
+  (A looping container started by cron every hour would never exit: 24 stuck
+  containers a day on a 1 GB VM.)
+- RUN_MODE=loop: run forever with POLL_INTERVAL_SECONDS between runs (Day 2 Compose).
 """
 import logging
 import os
@@ -23,9 +27,13 @@ import time
 from quality import log_event
 
 
+def loop_mode():
+    return os.environ.get("RUN_MODE") == "loop"
+
+
 def run(job, source):
     interval = int(os.environ.get("POLL_INTERVAL_SECONDS", "3600"))
-    if os.environ.get("RUN_ONCE") == "1":
+    if not loop_mode():
         return job()
     while True:
         try:

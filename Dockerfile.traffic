@@ -3,6 +3,6 @@ ENV PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-COPY getTrafficReadings.py db.py quality.py publisher.py scheduler.py redis_ping.py ingest_traffic.py ./
+COPY getTrafficReadings.py db.py quality.py publisher.py scheduler.py redis_ping.py check_db.py ingest_traffic.py ./
 EXPOSE 8000
 CMD ["python", "ingest_traffic.py"]

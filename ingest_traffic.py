@@ -194,7 +194,7 @@ def run_once():
 
 def main():
     setup_logging()
-    if os.environ.get("RUN_ONCE") != "1":
+    if scheduler.loop_mode():  # /health only makes sense for a long-running service
         start_health_server(health, int(os.environ.get("HEALTH_PORT", "8000")))
     return scheduler.run(run_once, SOURCE)
 
