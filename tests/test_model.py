@@ -49,7 +49,7 @@ def toy_model(tmp_path):
 
 def test_predict_shape_and_ranges(toy_model):
     out = predict.predict(2500, 9)
-    assert set(out) == {"no2_ug_m3_predicted", "no2_exceedance_risk"}
+    assert {"no2_ug_m3_predicted", "no2_exceedance_risk", "extrapolating"} <= set(out)
     assert 0 <= out["no2_ug_m3_predicted"] <= 200
     assert 0 <= out["no2_exceedance_risk"] <= 1
 

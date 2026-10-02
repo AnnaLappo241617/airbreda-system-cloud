@@ -15,6 +15,7 @@ EXCEEDANCE THRESHOLD: 40 µg/m³
   quality classification, and equals the current EU annual limit. So "risk" here means
   "this hour is likely to be above good air quality", not "a legal limit is breached".
 """
+import json
 import os
 
 import joblib
@@ -26,7 +27,32 @@ THRESHOLD_UG_M3 = 40.0
 STEEPNESS = 0.2          # risk 0.12 at 30, 0.5 at 40, 0.88 at 50 µg/m³
 MODEL_PATH = os.environ.get("MODEL_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "model.pkl"))
 
+META_PATH = os.environ.get("MODEL_META_PATH", os.path.join(os.path.dirname(os.path.abspath(__file__)), "model_meta.json"))
+
 _model = None
+_meta = None
+
+
+def model_info():
+    """Contents of model_meta.json (written by train_model.py), or {} if it is missing."""
+    global _meta
+    if _meta is None:
+        try:
+            with open(META_PATH) as f:
+                _meta = json.load(f)
+        except (OSError, ValueError):
+            _meta = {}
+    return _meta
+
+
+def is_extrapolating(total_intensity_veh_per_hr, hour_of_day):
+    """True if the inputs lie outside what the model was trained on; None if unknown."""
+    ranges = model_info().get("feature_ranges")
+    if not ranges:
+        return None
+    lo_t, hi_t = ranges["total_intensity_veh_per_hr"]
+    lo_h, hi_h = ranges["hour_of_day"]
+    return not (lo_t <= total_intensity_veh_per_hr <= hi_t and lo_h <= hour_of_day <= hi_h)
 
 
 def load_model(path=None):
@@ -46,4 +72,5 @@ def predict(total_intensity_veh_per_hr, hour_of_day):
     X = pd.DataFrame([[float(total_intensity_veh_per_hr), int(hour_of_day)]], columns=FEATURES)
     raw = float(load_model().predict(X)[0])
     no2 = max(raw, 0.0)   # a linear model can extrapolate below zero; concentrations can't be negative
-    return {"no2_ug_m3_predicted": round(no2, 2), "no2_exceedance_risk": round(exceedance_risk(no2), 4)}
+    return {"no2_ug_m3_predicted": round(no2, 2), "no2_exceedance_risk": round(exceedance_risk(no2), 4),
+            "extrapolating": is_extrapolating(float(total_intensity_veh_per_hr), int(hour_of_day))}

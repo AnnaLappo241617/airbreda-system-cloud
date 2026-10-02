@@ -87,7 +87,8 @@ def main(path="training_data.csv"):
             "intercept": float(model.intercept_), "metrics": metrics,
             "baseline_mae": round(baseline_mae, 3), "threshold_ug_m3": THRESHOLD_UG_M3,
             "sklearn_version": sklearn.__version__, "logistic_trained": logistic is not None,
-            "data_range": [str(df["traffic_hour"].min()), str(df["traffic_hour"].max())]}
+            "data_range": [str(df["traffic_hour"].min()), str(df["traffic_hour"].max())],
+            "feature_ranges": {f: [float(df[f].min()), float(df[f].max())] for f in FEATURES}}
     with open("model_meta.json", "w") as f:
         json.dump(meta, f, indent=2)
     print("\nSaved model.pkl and model_meta.json")

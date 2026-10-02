@@ -58,4 +58,31 @@ def test_unknown_site_is_404(client):
 
 def test_index_page_calls_the_api(client):
     html = client.get("/").text
-    assert "/site/${s}" in html and "setInterval" in html
+    assert "/site/${s}" in html and "setInterval" in html and "/history" in html
+
+
+def test_health_has_required_shape(monkeypatch, tmp_path):
+    (tmp_path / "air.log").write_text(
+        '{"level": "INFO", "logged_at": "2099-01-01T10:10:03Z", "event": "fetch_success"}\n'
+        '{"level": "WARNING", "logged_at": "2099-01-01T10:10:03Z", "event": "DATA_QUALITY_ERROR"}\n')
+    (tmp_path / "traffic.log").write_text("Found credentials from IAM Role: x\n"
+        '{"level": "INFO", "logged_at": "2099-01-01T10:20:51Z", "event": "fetch_success"}\n')
+    monkeypatch.setattr(dashboard, "LOG_DIR", tmp_path)
+    monkeypatch.setattr(dashboard, "latest_data_time", lambda c: datetime(2026, 10, 1, 12, tzinfo=timezone.utc))
+    monkeypatch.setattr(dashboard.predictor, "load_model", lambda *a: object())
+    body = TestClient(dashboard.app).get("/health").json()
+    assert body["status"] in ("ok", "degraded")
+    for key in ("luchtmeetnet", "ndw"):
+        assert isinstance(body[key]["bad_data_count"], int)
+        assert body[key]["last_successful_fetch"].endswith("Z")
+    assert body["luchtmeetnet"]["last_successful_fetch"] == "2099-01-01T10:10:03Z"
+    assert body["luchtmeetnet"]["bad_data_count"] == 1 and body["ndw"]["bad_data_count"] == 0
+
+
+def test_health_falls_back_to_database_without_logs(monkeypatch, tmp_path):
+    monkeypatch.setattr(dashboard, "LOG_DIR", tmp_path / "missing")
+    monkeypatch.setattr(dashboard, "latest_data_time", lambda c: datetime(2026, 10, 1, 12, tzinfo=timezone.utc))
+    monkeypatch.setattr(dashboard.predictor, "load_model", lambda *a: object())
+    body = TestClient(dashboard.app).get("/health").json()
+    assert body["ndw"]["last_successful_fetch"] == "2026-10-01T12:00:00Z"
+    assert body["ndw"]["bad_data_count"] == 0 and body["ndw"]["source_of_truth"] == "database"

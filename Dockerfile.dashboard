@@ -6,6 +6,7 @@ WORKDIR /app
 COPY requirements-dashboard.txt .
 RUN pip install --no-cache-dir -r requirements-dashboard.txt
 # With several source files the destination must be a directory ending in "/"
-COPY db.py predict.py dashboard.py model.pkl ./
+COPY db.py quality.py predict.py dashboard.py model.pkl model_meta.json ./
 EXPOSE 8000
-CMD ["uvicorn", "dashboard:app", "--host", "0.0.0.0", "--port", "8000"]
+# --no-access-log: the app writes its own structured JSON line per request instead of plain-text access logs
+CMD ["uvicorn", "dashboard:app", "--host", "0.0.0.0", "--port", "8000", "--no-access-log"]

@@ -17,6 +17,12 @@ HOW THE JOIN WORKS (important - read before changing it)
 - hour_of_day = HH in UTC (the traffic hour). predict() must be called with the same
   definition, or the model sees a different feature at serving time than in training.
 
+NO2 BACKFILL: ingest_air.py stores only the newest reading per run, so hours can be missing
+in the database even though traffic files exist for them (e.g. when a run was late or the VM
+was off). Luchtmeetnet keeps history, so missing NO2 hours are fetched from the API, written to
+sensor_readings (idempotent) and used for the join. NDW keeps NO history - traffic can't be
+backfilled, which is why only time adds rows.
+
 Other rules: rows with is_flagged = TRUE (stale/null NO2) are excluded from training, and an
 hour is only kept if all four sites have a file (otherwise the total would be too low).
 """
@@ -29,7 +35,9 @@ import boto3
 import pandas as pd
 from dotenv import load_dotenv
 
-from db import get_connection
+import requests
+
+from db import get_connection, save_rows
 
 load_dotenv()
 BUCKET = os.environ.get("S3_BUCKET", "airbreda-testnight-2026")
@@ -69,6 +77,37 @@ def load_traffic(s3=None):
     return df
 
 
+def backfill_no2(no2, traffic, max_pages=10):
+    """Fetch NO2 hours that traffic needs but the database lacks. Returns the extended frame."""
+    needed = set(traffic["traffic_hour"].unique() + pd.Timedelta(hours=1)) - set(no2["timestamp"])
+    if not needed:
+        return no2
+    oldest = min(needed)
+    url = "https://api.luchtmeetnet.nl/open_api/stations/NL10240/measurements"
+    found = []
+    for page in range(1, max_pages + 1):
+        r = requests.get(url, params={"formula": "NO2", "order_by": "timestamp_measured",
+                                      "order_direction": "desc", "page": page}, timeout=15)
+        r.raise_for_status()
+        data = r.json().get("data", [])
+        if not data:
+            break
+        for rec in data:
+            ts = pd.Timestamp(rec["timestamp_measured"]).tz_convert("UTC")
+            if ts in needed and rec.get("value") is not None:
+                found.append({"timestamp": ts, "no2_ug_m3": float(rec["value"])})
+        if pd.Timestamp(data[-1]["timestamp_measured"]).tz_convert("UTC") < oldest:
+            break
+    if found:
+        rows = [("NL10240", r["timestamp"].isoformat(), "NO2", r["no2_ug_m3"], False) for r in found]
+        with get_connection() as conn:
+            inserted = save_rows(conn, rows)
+        print(f"NO2 backfill: {len(found)} missing hours found in the API, {inserted} written to the database")
+    else:
+        print(f"NO2 backfill: {len(needed)} hours missing, none available from the API")
+    return pd.concat([no2, pd.DataFrame(found, columns=["timestamp", "no2_ug_m3"])], ignore_index=True)
+
+
 def build(no2, traffic):
     wide = traffic.pivot_table(index="traffic_hour", columns="site", values="intensity", aggfunc="last")
     wide = wide.reindex(columns=SITES)
@@ -83,7 +122,8 @@ def build(no2, traffic):
 
 
 def main():
-    df = build(load_no2(), load_traffic())
+    no2, traffic = load_no2(), load_traffic()
+    df = build(backfill_no2(no2, traffic), traffic)
     df.to_csv("training_data.csv", index=False)
     print(f"\nJoined rows written to training_data.csv: {len(df)}")
     if len(df) < 24:
