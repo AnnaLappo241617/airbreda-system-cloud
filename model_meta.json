@@ -1,30 +1,30 @@
 {
-  "trained_at": "2026-10-02T07:59:02+00:00",
-  "rows": 25,
+  "trained_at": "2026-10-02T12:08:10+00:00",
+  "rows": 29,
   "features": [
     "total_intensity_veh_per_hr",
     "hour_of_day"
   ],
   "target": "no2_ug_m3",
   "coefficients": {
-    "total_intensity_veh_per_hr": -0.001437831091537478,
-    "hour_of_day": 0.17822120099563638
+    "total_intensity_veh_per_hr": -0.001035684798192842,
+    "hour_of_day": 0.09074293152498628
   },
-  "intercept": 28.573267585004945,
+  "intercept": 29.49953649569073,
   "metrics": {
     "in_sample_all_rows": {
-      "n": 25,
-      "r2": 0.0796,
-      "mae": 7.242
+      "n": 29,
+      "r2": 0.0395,
+      "mae": 7.405
     }
   },
-  "baseline_mae": 7.771,
+  "baseline_mae": 7.531,
   "threshold_ug_m3": 40.0,
   "sklearn_version": "1.8.0",
   "logistic_trained": true,
   "data_range": [
     "2026-10-01 00:00:00+00:00",
-    "2026-10-02 06:00:00+00:00"
+    "2026-10-02 10:00:00+00:00"
   ],
   "feature_ranges": {
     "total_intensity_veh_per_hr": [
